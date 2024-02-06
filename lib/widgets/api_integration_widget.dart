@@ -1,5 +1,5 @@
 import 'package:ChatGemini/env/env.dart';
-import 'package:ChatGemini/globals.dart';
+// import 'package:ChatGemini/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
