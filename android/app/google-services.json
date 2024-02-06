@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "317796345447",
+    "project_id": "chatpalm-612da",
+    "storage_bucket": "chatpalm-612da.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317796345447:android:ffcd4e2f9f6c899e3056c2",
+        "android_client_info": {
+          "package_name": "com.example.chatpalm_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "317796345447-8dj4bvl9u0n97sj5n4tmli8dhsdr0sef.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBy7SeATK_g5i3yi6-y8E9PutfugOw6Tdc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "317796345447-8dj4bvl9u0n97sj5n4tmli8dhsdr0sef.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
