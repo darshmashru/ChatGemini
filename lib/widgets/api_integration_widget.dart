@@ -23,7 +23,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   final TextEditingController _promptInputController = TextEditingController();
   final TextEditingController _promptOutputController = TextEditingController();
 
-  final _outputScrollController = ScrollController(); 
+  final _outputScrollController = ScrollController();
 
   String mdText = "";
 
@@ -33,10 +33,10 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     });
 
     _outputScrollController.animateTo(
-    _outputScrollController.position.maxScrollExtent,
-    duration: const Duration(milliseconds: 150),
-    curve: Curves.easeOut,
-  );
+      _outputScrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -137,18 +137,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
                   onPressed: () {
-//                     // generateTextWithPrompt(
-//                     //     promptString: _promptInputController.text);
-//                     final gemini = Gemini.instance;
-
-// gemini.streamGenerateContent('Utilizing Google Ads in Flutter')
-//   .listen((value) {
-//     print(value.output);
-//   }).onError((e) {
-//     log('streamGenerateContent exception', error: e);
-//   });
-//                   },
-_streamContent(_promptInputController.text);
+                    _streamContent(_promptInputController.text);
                   },
                   child: const Text('Ask'),
                 ),
@@ -180,13 +169,12 @@ _streamContent(_promptInputController.text);
   void _streamContent(String prompt) {
     updateText(''); // Clear the output text field before generating new content
     final gemini = Gemini.instance;
-    gemini.streamGenerateContent(prompt)
-      .listen((content) {
-        final text = content.output ?? '';
-        updateText(mdText + text);
-      }).onError((error) {
-        updateText('Error generating content: $error');
-      });
+    gemini.streamGenerateContent(prompt).listen((content) {
+      final text = content.output ?? '';
+      updateText(mdText + text);
+    }).onError((error) {
+      updateText('Error generating content: $error');
+    });
   }
 
   @override
