@@ -18,6 +18,19 @@ class ApiIntegrationWidget extends ConsumerStatefulWidget {
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
 }
 
+class LoadingIndicator extends StatelessWidget {
+  const LoadingIndicator({super.key});
+
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(), 
+    );
+  }
+
+}
+
 class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
@@ -26,6 +39,8 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   final _outputScrollController = ScrollController();
 
   String mdText = "";
+
+  bool _isLoading = false; // Loading Variable
 
   void updateText(String newText) {
     setState(() {
@@ -50,6 +65,10 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
           Expanded(
             child: Stack(
               children: [
+                if (_isLoading)
+        const Positioned.fill(
+          child: LoadingIndicator() 
+        ),
                 SizedBox(
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
@@ -167,15 +186,29 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   // }
 
   void _streamContent(String prompt) {
-    updateText(''); // Clear the output text field before generating new content
-    final gemini = Gemini.instance;
-    gemini.streamGenerateContent(prompt).listen((content) {
-      final text = content.output ?? '';
-      updateText(mdText + text);
-    }).onError((error) {
-      updateText('Error generating content: $error');
+  updateText(''); // Clear the output text field before generating new content
+  setState(() {
+    _isLoading = true; 
+  });
+  final gemini = Gemini.instance;
+  gemini.streamGenerateContent(prompt).listen((content) {
+    setState(() {
+      _isLoading = false;
     });
-  }
+    final text = content.output ?? '';
+    updateText(mdText + text);
+  }, onError: (error) {
+    updateText('Error generating content: $error');
+    setState(() {
+      _isLoading = false;
+    });
+  }, onDone: () {
+    // Hide loading if nothing generated
+    setState(() {
+      _isLoading = false;
+    });
+  });
+}
 
   @override
   bool get wantKeepAlive => true;
