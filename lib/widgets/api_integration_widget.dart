@@ -21,14 +21,12 @@ class ApiIntegrationWidget extends ConsumerStatefulWidget {
 class LoadingIndicator extends StatelessWidget {
   const LoadingIndicator({super.key});
 
-
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(), 
+      child: CircularProgressIndicator(),
     );
   }
-
 }
 
 class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
@@ -66,9 +64,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
             child: Stack(
               children: [
                 if (_isLoading)
-        const Positioned.fill(
-          child: LoadingIndicator() 
-        ),
+                  const Positioned.fill(child: LoadingIndicator()),
                 SizedBox(
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
@@ -149,7 +145,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                 ),
               ),
               SizedBox(
-                width: 75.0,
+                // width: 75.0,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.background,
@@ -186,29 +182,29 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   // }
 
   void _streamContent(String prompt) {
-  updateText(''); // Clear the output text field before generating new content
-  setState(() {
-    _isLoading = true; 
-  });
-  final gemini = Gemini.instance;
-  gemini.streamGenerateContent(prompt).listen((content) {
+    updateText(''); // Clear the output text field before generating new content
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
-    final text = content.output ?? '';
-    updateText(mdText + text);
-  }, onError: (error) {
-    updateText('Error generating content: $error');
-    setState(() {
-      _isLoading = false;
+    final gemini = Gemini.instance;
+    gemini.streamGenerateContent(prompt).listen((content) {
+      setState(() {
+        _isLoading = false;
+      });
+      final text = content.output ?? '';
+      updateText(mdText + text);
+    }, onError: (error) {
+      updateText('Error generating content: $error');
+      setState(() {
+        _isLoading = false;
+      });
+    }, onDone: () {
+      // Hide loading if nothing generated
+      setState(() {
+        _isLoading = false;
+      });
     });
-  }, onDone: () {
-    // Hide loading if nothing generated
-    setState(() {
-      _isLoading = false;
-    });
-  });
-}
+  }
 
   @override
   bool get wantKeepAlive => true;
