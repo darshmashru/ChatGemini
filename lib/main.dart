@@ -1,7 +1,9 @@
 import 'package:ChatGemini/Routes/app_route_config.dart';
+import 'package:ChatGemini/env/env.dart';
 import 'package:ChatGemini/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'firebase_options.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +14,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  // Update name to geminiApiKey
+  Gemini.init(apiKey: Env.geminiApiKey);
   runApp(const ProviderScope(child: Myapp()));
 }
 

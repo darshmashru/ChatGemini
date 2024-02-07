@@ -2,6 +2,7 @@ import 'package:ChatGemini/env/env.dart';
 // import 'package:ChatGemini/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_language_api/google_generative_language_api.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -140,63 +141,17 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   Future<String> generateTextWithPrompt({
     required String promptString,
   }) async {
-    double temperature = ref.read(temperatureProvider);
-    double topK = ref.read(topKProvider);
-    double topP = ref.read(topPProvider);
-
-    String apiKey = Env.palmApiKey;
-
-    String textModel = 'models/text-bison-001';
-
-    print(temperature);
-    print(topK);
-    print(topP);
-
-    GenerateTextRequest textRequest = GenerateTextRequest(
-      prompt: TextPrompt(text: promptString),
-      temperature: temperature,
-      candidateCount: 1,
-      topK: topK.round(),
-      topP: topP,
-      maxOutputTokens: 1024,
-      safetySettings: const [
-        SafetySetting(
-            category: HarmCategory.derogatory,
-            threshold: HarmBlockThreshold.lowAndAbove),
-        SafetySetting(
-            category: HarmCategory.toxicity,
-            threshold: HarmBlockThreshold.lowAndAbove),
-        SafetySetting(
-            category: HarmCategory.violence,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-        SafetySetting(
-            category: HarmCategory.sexual,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-        SafetySetting(
-            category: HarmCategory.medical,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-        SafetySetting(
-            category: HarmCategory.dangerous,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-      ],
-    );
-
-    final GeneratedText response = await GenerativeLanguageAPI.generateText(
-      modelName: textModel,
-      request: textRequest,
-      apiKey: apiKey,
-    );
-
-    _promptOutputController.text =
-        response.candidates.map((candidate) => candidate.output).join('\n');
-    updateText(_promptOutputController.text);
-
-    if (response.candidates.isNotEmpty) {
-      TextCompletion candidate = response.candidates.first;
-      return candidate.output;
+    final gemini = Gemini.instance;
+    try {
+      final value = await gemini.text(promptString);
+      print(value?.output); // or value?.content?.parts?.last.text
+      _promptOutputController.text = value?.output ?? '';
+      updateText(_promptOutputController.text);
+      return _promptOutputController.text;
+    } catch (e) {
+      print(e);
+      return '';
     }
-
-    return '';
   }
 
   @override
