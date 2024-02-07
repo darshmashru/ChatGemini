@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:ChatGemini/env/env.dart';
 // import 'package:ChatGemini/globals.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +22,21 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
   final TextEditingController _promptOutputController = TextEditingController();
+
+  final _outputScrollController = ScrollController(); 
+
   String mdText = "";
 
   void updateText(String newText) {
     setState(() {
       mdText = newText;
     });
+
+    _outputScrollController.animateTo(
+    _outputScrollController.position.maxScrollExtent,
+    duration: const Duration(milliseconds: 150),
+    curve: Curves.easeOut,
+  );
   }
 
   @override
@@ -43,6 +54,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
                   child: SingleChildScrollView(
+                    controller: _outputScrollController,
                     child: MarkdownBody(
                       data: mdText,
                       selectable: true,
@@ -125,8 +137,18 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
                   onPressed: () {
-                    generateTextWithPrompt(
-                        promptString: _promptInputController.text);
+//                     // generateTextWithPrompt(
+//                     //     promptString: _promptInputController.text);
+//                     final gemini = Gemini.instance;
+
+// gemini.streamGenerateContent('Utilizing Google Ads in Flutter')
+//   .listen((value) {
+//     print(value.output);
+//   }).onError((e) {
+//     log('streamGenerateContent exception', error: e);
+//   });
+//                   },
+_streamContent(_promptInputController.text);
                   },
                   child: const Text('Ask'),
                 ),
@@ -138,20 +160,33 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     );
   }
 
-  Future<String> generateTextWithPrompt({
-    required String promptString,
-  }) async {
+  // Text only method if Stream does not work
+  // Future<String> generateTextWithPrompt({
+  //   required String promptString,
+  // }) async {
+  //   final gemini = Gemini.instance;
+  //   try {
+  //     final value = await gemini.text(promptString);
+  //     print(value?.output); // or value?.content?.parts?.last.text
+  //     _promptOutputController.text = value?.output ?? '';
+  //     updateText(_promptOutputController.text);
+  //     return _promptOutputController.text;
+  //   } catch (e) {
+  //     print(e);
+  //     return '';
+  //   }
+  // }
+
+  void _streamContent(String prompt) {
+    updateText(''); // Clear the output text field before generating new content
     final gemini = Gemini.instance;
-    try {
-      final value = await gemini.text(promptString);
-      print(value?.output); // or value?.content?.parts?.last.text
-      _promptOutputController.text = value?.output ?? '';
-      updateText(_promptOutputController.text);
-      return _promptOutputController.text;
-    } catch (e) {
-      print(e);
-      return '';
-    }
+    gemini.streamGenerateContent(prompt)
+      .listen((content) {
+        final text = content.output ?? '';
+        updateText(mdText + text);
+      }).onError((error) {
+        updateText('Error generating content: $error');
+      });
   }
 
   @override
