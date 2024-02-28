@@ -49,6 +49,8 @@ dependencies:
   url_launcher: ^6.2.2
   dash_bubble: ^2.0.0
   flutter_riverpod: ^2.4.9
+  flutter_gemini: ^2.0.1
+  logging: ^1.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

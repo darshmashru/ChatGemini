@@ -1,7 +1,10 @@
+import 'dart:developer';
+
 import 'package:ChatGemini/env/env.dart';
-import 'package:ChatGemini/globals.dart';
+// import 'package:ChatGemini/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_language_api/google_generative_language_api.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -15,16 +18,38 @@ class ApiIntegrationWidget extends ConsumerStatefulWidget {
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
 }
 
+class LoadingIndicator extends StatelessWidget {
+  const LoadingIndicator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+}
+
 class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
   final TextEditingController _promptOutputController = TextEditingController();
+
+  final _outputScrollController = ScrollController();
+
   String mdText = "";
+
+  bool _isLoading = false; // Loading Variable
 
   void updateText(String newText) {
     setState(() {
       mdText = newText;
     });
+
+    _outputScrollController.animateTo(
+      _outputScrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -38,10 +63,13 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
           Expanded(
             child: Stack(
               children: [
+                if (_isLoading)
+                  const Positioned.fill(child: LoadingIndicator()),
                 SizedBox(
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
                   child: SingleChildScrollView(
+                    controller: _outputScrollController,
                     child: MarkdownBody(
                       data: mdText,
                       selectable: true,
@@ -117,15 +145,14 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                 ),
               ),
               SizedBox(
-                width: 75.0,
+                // width: 75.0,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.background,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
                   onPressed: () {
-                    generateTextWithPrompt(
-                        promptString: _promptInputController.text);
+                    _streamContent(_promptInputController.text);
                   },
                   child: const Text('Ask'),
                 ),
@@ -137,66 +164,46 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     );
   }
 
-  Future<String> generateTextWithPrompt({
-    required String promptString,
-  }) async {
-    double temperature = ref.read(temperatureProvider);
-    double topK = ref.read(topKProvider);
-    double topP = ref.read(topPProvider);
+  // Text only method if Stream does not work
+  // Future<String> generateTextWithPrompt({
+  //   required String promptString,
+  // }) async {
+  //   final gemini = Gemini.instance;
+  //   try {
+  //     final value = await gemini.text(promptString);
+  //     print(value?.output); // or value?.content?.parts?.last.text
+  //     _promptOutputController.text = value?.output ?? '';
+  //     updateText(_promptOutputController.text);
+  //     return _promptOutputController.text;
+  //   } catch (e) {
+  //     print(e);
+  //     return '';
+  //   }
+  // }
 
-    String apiKey = Env.palmApiKey;
-
-    String textModel = 'models/text-bison-001';
-
-    print(temperature);
-    print(topK);
-    print(topP);
-
-    GenerateTextRequest textRequest = GenerateTextRequest(
-      prompt: TextPrompt(text: promptString),
-      temperature: temperature,
-      candidateCount: 1,
-      topK: topK.round(),
-      topP: topP,
-      maxOutputTokens: 1024,
-      safetySettings: const [
-        SafetySetting(
-            category: HarmCategory.derogatory,
-            threshold: HarmBlockThreshold.lowAndAbove),
-        SafetySetting(
-            category: HarmCategory.toxicity,
-            threshold: HarmBlockThreshold.lowAndAbove),
-        SafetySetting(
-            category: HarmCategory.violence,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-        SafetySetting(
-            category: HarmCategory.sexual,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-        SafetySetting(
-            category: HarmCategory.medical,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-        SafetySetting(
-            category: HarmCategory.dangerous,
-            threshold: HarmBlockThreshold.mediumAndAbove),
-      ],
-    );
-
-    final GeneratedText response = await GenerativeLanguageAPI.generateText(
-      modelName: textModel,
-      request: textRequest,
-      apiKey: apiKey,
-    );
-
-    _promptOutputController.text =
-        response.candidates.map((candidate) => candidate.output).join('\n');
-    updateText(_promptOutputController.text);
-
-    if (response.candidates.isNotEmpty) {
-      TextCompletion candidate = response.candidates.first;
-      return candidate.output;
-    }
-
-    return '';
+  void _streamContent(String prompt) {
+    updateText(''); // Clear the output text field before generating new content
+    setState(() {
+      _isLoading = true;
+    });
+    final gemini = Gemini.instance;
+    gemini.streamGenerateContent(prompt).listen((content) {
+      setState(() {
+        _isLoading = false;
+      });
+      final text = content.output ?? '';
+      updateText(mdText + text);
+    }, onError: (error) {
+      updateText('Error generating content: $error');
+      setState(() {
+        _isLoading = false;
+      });
+    }, onDone: () {
+      // Hide loading if nothing generated
+      setState(() {
+        _isLoading = false;
+      });
+    });
   }
 
   @override

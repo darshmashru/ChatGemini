@@ -6,7 +6,7 @@ import 'package:ChatGemini/globals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // API Key from Envied .env file
-String apiKey = Env.palmApiKey;
+String apiKey = Env.geminiApiKey;
 
 // API Key from globals.dart
 // String apiKey = PALM_API_KEY;

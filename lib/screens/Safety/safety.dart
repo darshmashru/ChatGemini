@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // API Key from Envied .env file
-String apiKey = Env.palmApiKey;
+String apiKey = Env.geminiApiKey;
 
 // double _temperature = 0.0;
 double _temperature = global_temperature;
