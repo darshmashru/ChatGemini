@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> {
               Padding(
                 padding: const EdgeInsets.only(top: 22.0, left: 50.0),
                 child: Image.asset(
-                  "lib/assets/logos/image 7.png",
+                  "lib/assets/logos/image_7.png",
                   height: 50,
                   alignment: Alignment.center,
                 ),
@@ -121,25 +121,25 @@ class _HomePageState extends State<HomePage> {
             });
           },
           currentIndex: myIndex,
-          items: [
-            const BottomNavigationBarItem(
+          items: const [
+            BottomNavigationBarItem(
               icon: Icon(Icons.home),
               label: "Home",
               backgroundColor: Colors.black,
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.person),
               label: "Profile",
               backgroundColor: Colors.black,
             ),
-            if (Platform
-                .isAndroid) // Conditionally include the item only on Android
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: "Settings",
-                backgroundColor: Colors.black,
-              ),
-              const BottomNavigationBarItem(
+            // if (Platform
+            //     .isAndroid) // Conditionally include the item only on Android
+            //   const BottomNavigationBarItem(
+            //     icon: Icon(Icons.settings),
+            //     label: "Settings",
+            //     backgroundColor: Colors.black,
+            //   ),
+              BottomNavigationBarItem(
               icon: Icon(Icons.health_and_safety),
               label: "Safety",
               backgroundColor: Colors.black,

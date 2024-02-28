@@ -72,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                   height: 50,
                 ),
                 Image.asset(
-                  'lib/assets/logos/PaLM Logo.png',
+                  'lib/assets/logos/palm_logo.png',
                   width: 75,
                   height: 75,
                 ),
