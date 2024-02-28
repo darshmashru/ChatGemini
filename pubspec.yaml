@@ -84,7 +84,7 @@ flutter:
 
   assets:
     - lib/assets/images/
-    - lib/assets/logos/PaLM_logo.svg
+    - lib/assets/logos/palm_logo.svg
     - lib/assets/logos/
 #    - .env
   #   - images/a_dot_ham.jpeg
