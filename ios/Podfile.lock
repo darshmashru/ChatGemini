@@ -7,15 +7,15 @@ PODS:
     - AppAuth/Core
   - Firebase/Auth (10.18.0):
     - Firebase/CoreOnly
-    - FirebaseAuth (~> 10.18.0)
-  - Firebase/CoreOnly (10.18.0):
-    - FirebaseCore (= 10.18.0)
-  - firebase_auth (4.16.0):
-    - Firebase/Auth (= 10.18.0)
+    - FirebaseAuth (~> 10.20.0)
+  - Firebase/CoreOnly (10.20.0):
+    - FirebaseCore (= 10.20.0)
+  - firebase_auth (4.17.6):
+    - Firebase/Auth (= 10.20.0)
     - firebase_core
     - Flutter
-  - firebase_core (2.24.2):
-    - Firebase/CoreOnly (= 10.18.0)
+  - firebase_core (2.25.5):
+    - Firebase/CoreOnly (= 10.20.0)
     - Flutter
   - FirebaseAppCheckInterop (10.21.0)
   - FirebaseAuth (10.18.0):
@@ -117,13 +117,13 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AppAuth: 3bb1d1cd9340bd09f5ed189fb00b1cc28e1e8570
-  Firebase: 414ad272f8d02dfbf12662a9d43f4bba9bec2a06
-  firebase_auth: 8e9ec02991ca4659111cc671c84d0c010b6bfb26
-  firebase_core: 0af4a2b24f62071f9bf283691c0ee41556dcb3f5
-  FirebaseAppCheckInterop: 69fc7d8f6a1cbfa973efb8d1723651de30d12525
-  FirebaseAuth: 12314b438fa76048540c8fb86d6cfc9e08595176
-  FirebaseCore: 2322423314d92f946219c8791674d2f3345b598f
-  FirebaseCoreInternal: 43c1788eaeee9d1b97caaa751af567ce11010d00
+  Firebase: 10c8cb12fb7ad2ae0c09ffc86cd9c1ab392a0031
+  firebase_auth: b237f065b2afc6bd7962124e1cbacdbef31036e6
+  firebase_core: c8628c7ce80f79439149549052bff22f6784fbf5
+  FirebaseAppCheckInterop: e81bdb1cdb82f8e0cef353ba5018a8402682032c
+  FirebaseAuth: 9c5c400d2c3055d8ae3a0284944c86fa95d48dac
+  FirebaseCore: 28045c1560a2600d284b9c45a904fe322dc890b6
+  FirebaseCoreInternal: efeeb171ac02d623bdaefe121539939821e10811
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   google_sign_in_ios: 989eea5abe94af62050782714daf920be883d4a2
   GoogleSignIn: b232380cf495a429b8095d3178a8d5855b42e842
