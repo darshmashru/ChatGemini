@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -21,9 +22,14 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   final ScrollController _outputScrollController = ScrollController();
   String mdText = "";
   final ImagePicker _picker = ImagePicker();
-  Uint8List? _imageBytes; // Use Uint8List for image bytes
+  Uint8List? _imageBytes;
   String? _errorMessage;
-  bool _isLoading = false; // Add this variable to track loading state
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +51,8 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                         padding: const EdgeInsets.all(8.0),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width -
-                                16, // Adjust the width as needed
-                            maxHeight: 300, // Adjust the height as needed
+                            maxWidth: MediaQuery.of(context).size.width - 16,
+                            maxHeight: 300,
                           ),
                           child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                         ),
@@ -61,7 +66,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                         ),
                       ),
                     MarkdownBody(
-                      data: mdText,
+                      data: _isLoading ? mdText : mdText,
                       selectable: true,
                       onTapLink: (text, href, title) {
                         if (href != null) {
@@ -154,10 +159,10 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                   },
                   child: _isLoading
                       ? SizedBox(
-                          width: 20.0, // Adjust the width as needed
-                          height: 20.0, // Adjust the height as needed
+                          width: 20.0,
+                          height: 20.0,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2.0, // Decrease the stroke width
+                            strokeWidth: 2.0,
                           ),
                         )
                       : const Text('Ask'),
@@ -178,20 +183,29 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
 
     setState(() {
       _errorMessage = null;
-      _isLoading = true; // Set loading state to true
+      _isLoading = true;
+      mdText = '';
     });
 
     try {
       final gemini = Gemini.instance;
       final result = await gemini.text(text);
+      final generatedText = result?.output ?? 'No output';
+
+      for (int i = 0; i < generatedText.length; i++) {
+        await Future.delayed(const Duration(milliseconds: 5));
+        setState(() {
+          mdText += generatedText[i];
+        });
+      }
+
       setState(() {
-        mdText = result?.output ?? 'No output';
-        _isLoading = false; // Set loading state to false after completion
+        _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text: $e';
-        _isLoading = false; // Set loading state to false on error
+        _isLoading = false;
       });
     }
   }
@@ -220,7 +234,8 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
 
     setState(() {
       _errorMessage = null;
-      _isLoading = true; // Set loading state to true
+      _isLoading = true;
+      mdText = '';
     });
 
     try {
@@ -229,14 +244,22 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
         text: _promptInputController.text,
         images: [_imageBytes!],
       );
+      final generatedText = result?.content?.parts?.last.text ?? 'No output';
+
+      for (int i = 0; i < generatedText.length; i++) {
+        await Future.delayed(const Duration(milliseconds: 5));
+        setState(() {
+          mdText += generatedText[i];
+        });
+      }
+
       setState(() {
-        mdText = result?.content?.parts?.last.text ?? 'No output';
-        _isLoading = false; // Set loading state to false after completion
+        _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text with image: $e';
-        _isLoading = false; // Set loading state to false on error
+        _isLoading = false;
       });
     }
   }
