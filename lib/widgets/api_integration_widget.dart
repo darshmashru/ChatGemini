@@ -1,15 +1,12 @@
 import 'dart:developer';
-
-import 'package:ChatGemini/env/env.dart';
-// import 'package:ChatGemini/globals.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_generative_language_api/google_generative_language_api.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:ChatGemini/providers/parameter_provider.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ApiIntegrationWidget extends ConsumerStatefulWidget {
   const ApiIntegrationWidget({Key? key}) : super(key: key);
@@ -18,59 +15,52 @@ class ApiIntegrationWidget extends ConsumerStatefulWidget {
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
 }
 
-class LoadingIndicator extends StatelessWidget {
-  const LoadingIndicator({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
-  }
-}
-
 class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
-  final TextEditingController _promptOutputController = TextEditingController();
-
-  final _outputScrollController = ScrollController();
-
+  final ScrollController _outputScrollController = ScrollController();
   String mdText = "";
-
-  bool _isLoading = false; // Loading Variable
-
-  void updateText(String newText) {
-    setState(() {
-      mdText = newText;
-    });
-
-    _outputScrollController.animateTo(
-      _outputScrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
-    );
-  }
+  final ImagePicker _picker = ImagePicker();
+  Uint8List? _imageBytes; // Use Uint8List for image bytes
+  String? _errorMessage;
+  bool _isLoading = false; // Add this variable to track loading state
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            child: Stack(
-              children: [
-                if (_isLoading)
-                  const Positioned.fill(child: LoadingIndicator()),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  child: SingleChildScrollView(
-                    controller: _outputScrollController,
-                    child: MarkdownBody(
+    return Padding(
+      padding: const EdgeInsets.all(8.0), // Adjust padding as needed
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _outputScrollController,
+                child: Column(
+                  children: [
+                    if (_imageBytes != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width -
+                                16, // Adjust the width as needed
+                            maxHeight: 300, // Adjust the height as needed
+                          ),
+                          child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                        ),
+                      ),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    MarkdownBody(
                       data: mdText,
                       selectable: true,
                       onTapLink: (text, href, title) {
@@ -79,131 +69,183 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                         }
                       },
                       styleSheet: MarkdownStyleSheet(
-                        h1: const TextStyle(color: Colors.red, fontSize: 24),
-                        h2: const TextStyle(color: Colors.orange, fontSize: 20),
                         p: TextStyle(
                             color: Theme.of(context).colorScheme.primary),
-                        codeblockDecoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(color: Colors.black),
-                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: FloatingActionButton(
+                    onPressed: _pickImage,
+                    tooltip: 'Pick Image',
+                    child: const Icon(Icons.add_a_photo),
                   ),
                 ),
-                Positioned(
-                  top: 0,
-                  right: 0,
+                if (_imageBytes != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: FloatingActionButton(
+                      onPressed: _removeImage,
+                      tooltip: 'Remove Image',
+                      child: const Icon(Icons.remove),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: FloatingActionButton(
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    onPressed: () {
-                      final text = _promptOutputController.text;
-                      Clipboard.setData(ClipboardData(text: text));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Copied to Clipboard')));
-                    },
-                    child: const Icon(Icons.copy_rounded),
+                    onPressed: _isLoading ? null : _copyText,
+                    tooltip: 'Copy Text',
+                    child: const Icon(Icons.copy),
                   ),
                 ),
               ],
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 290.0,
-                padding: const EdgeInsets.only(right: 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 25.0),
-                  child: TextField(
-                    minLines: 1,
-                    maxLines: 50,
-                    style:
-                        TextStyle(color: Theme.of(context).colorScheme.primary),
-                    controller: _promptInputController,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.background,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      hintText: "Input text",
-                      hintStyle: TextStyle(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 290.0,
+                  padding: const EdgeInsets.only(right: 10.0),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 25.0),
+                    child: TextField(
+                      minLines: 1,
+                      maxLines: 5,
+                      style: TextStyle(
                           color: Theme.of(context).colorScheme.primary),
+                      controller: _promptInputController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.background,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        hintText: "Input text or Ask with an image",
+                        hintStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(
-                // width: 75.0,
-                child: ElevatedButton(
+                ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.background,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
-                  onPressed: () {
-                    _streamContent(_promptInputController.text);
+                  onPressed: _isLoading ? null : () {
+                    if (_imageBytes != null) {
+                      _generateTextWithImage();
+                    } else {
+                      _generateText();
+                    }
                   },
-                  child: const Text('Ask'),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20.0, // Adjust the width as needed
+                          height: 20.0, // Adjust the height as needed
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0, // Decrease the stroke width
+                          ),
+                        )
+                      : const Text('Ask'),
                 ),
-              ),
-            ],
-          )
-        ],
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
 
-  // Text only method if Stream does not work
-  // Future<String> generateTextWithPrompt({
-  //   required String promptString,
-  // }) async {
-  //   final gemini = Gemini.instance;
-  //   try {
-  //     final value = await gemini.text(promptString);
-  //     print(value?.output); // or value?.content?.parts?.last.text
-  //     _promptOutputController.text = value?.output ?? '';
-  //     updateText(_promptOutputController.text);
-  //     return _promptOutputController.text;
-  //   } catch (e) {
-  //     print(e);
-  //     return '';
-  //   }
-  // }
+  Future<void> _generateText() async {
+    final text = _promptInputController.text;
+    if (text.isEmpty) {
+      return;
+    }
 
-  void _streamContent(String prompt) {
-    updateText(''); // Clear the output text field before generating new content
     setState(() {
-      _isLoading = true;
+      _errorMessage = null;
+      _isLoading = true; // Set loading state to true
     });
-    final gemini = Gemini.instance;
-    gemini.streamGenerateContent(prompt).listen((content) {
+
+    try {
+      final gemini = Gemini.instance;
+      final result = await gemini.text(text);
       setState(() {
-        _isLoading = false;
+        mdText = result?.output ?? 'No output';
+        _isLoading = false; // Set loading state to false after completion
       });
-      final text = content.output ?? '';
-      updateText(mdText + text);
-    }, onError: (error) {
-      updateText('Error generating content: $error');
+    } catch (e) {
       setState(() {
-        _isLoading = false;
+        _errorMessage = 'Error generating text: $e';
+        _isLoading = false; // Set loading state to false on error
       });
-    }, onDone: () {
-      // Hide loading if nothing generated
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _isLoading = false;
+        _imageBytes = bytes;
+        _errorMessage = null;
       });
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _imageBytes = null;
     });
+  }
+
+  Future<void> _generateTextWithImage() async {
+    if (_imageBytes == null) {
+      return;
+    }
+
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true; // Set loading state to true
+    });
+
+    try {
+      final gemini = Gemini.instance;
+      final result = await gemini.textAndImage(
+        text: _promptInputController.text,
+        images: [_imageBytes!],
+      );
+      setState(() {
+        mdText = result?.content?.parts?.last.text ?? 'No output';
+        _isLoading = false; // Set loading state to false after completion
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error generating text with image: $e';
+        _isLoading = false; // Set loading state to false on error
+      });
+    }
+  }
+
+  Future<void> _copyText() async {
+    await Clipboard.setData(ClipboardData(text: mdText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Text copied to clipboard')),
+    );
   }
 
   @override

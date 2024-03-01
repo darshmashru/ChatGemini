@@ -155,7 +155,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 64.0, left: 16.0, right: 16.0),
+          padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
           child: Text(
             "Hello $USER_NAME_GLOBAL!",
             style: TextStyle(
@@ -165,15 +165,7 @@ class _HomePageState extends State<HomePage> {
             textAlign: TextAlign.left,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            "Explore and work with the Gemini API!", // Add your subheading text here
-            style: TextStyle(
-                fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
-            textAlign: TextAlign.left,
-          ),
-        ),
+        
         Divider(
           color: Theme.of(context).colorScheme.primary,
         ),
