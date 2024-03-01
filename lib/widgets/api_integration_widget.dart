@@ -15,135 +15,143 @@ class ApiIntegrationWidget extends ConsumerStatefulWidget {
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
 }
 
-class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget> with AutomaticKeepAliveClientMixin {
+class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
   final ScrollController _outputScrollController = ScrollController();
   String mdText = "";
-  bool _isLoading = false; // Loading Variable
   final ImagePicker _picker = ImagePicker();
   Uint8List? _imageBytes; // Use Uint8List for image bytes
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            child: Stack(
-              children: [
-                if (_isLoading)
-                  const Positioned.fill(
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                SingleChildScrollView(
-                  controller: _outputScrollController,
-                  child: Column(
-                    children: [
-                      if (_imageBytes != null) 
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width - 16, // Adjust the width as needed
-                              maxHeight: 300, // Adjust the height as needed
-                            ),
-                            child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+    return Padding(
+      padding: const EdgeInsets.all(8.0), // Adjust padding as needed
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _outputScrollController,
+                child: Column(
+                  children: [
+                    if (_imageBytes != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width -
+                                16, // Adjust the width as needed
+                            maxHeight: 300, // Adjust the height as needed
                           ),
-                        ),
-                      MarkdownBody(
-                        data: mdText,
-                        selectable: true,
-                        onTapLink: (text, href, title) {
-                          if (href != null) {
-                            launchUrl(Uri.parse(href));
-                          }
-                        },
-                        styleSheet: MarkdownStyleSheet(
-                          p: TextStyle(color: Theme.of(context).colorScheme.primary),
+                          child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                         ),
                       ),
-                    ],
-                  ),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    MarkdownBody(
+                      data: mdText,
+                      selectable: true,
+                      onTapLink: (text, href, title) {
+                        if (href != null) {
+                          launchUrl(Uri.parse(href));
+                        }
+                      },
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  top: 0,
-                  right: 0,
+              ),
+            ),
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: FloatingActionButton(
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: mdText));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Copied to Clipboard')));
-                    },
-                    child: const Icon(Icons.copy_rounded),
+                    onPressed: _pickImage,
+                    tooltip: 'Pick Image',
+                    child: const Icon(Icons.add_a_photo),
                   ),
                 ),
+                if (_imageBytes != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: FloatingActionButton(
+                      onPressed: _removeImage,
+                      tooltip: 'Remove Image',
+                      child: const Icon(Icons.remove),
+                    ),
+                  ),
               ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: FloatingActionButton(
-              onPressed: _pickImage,
-              tooltip: 'Pick Image',
-              child: const Icon(Icons.add_a_photo),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 290.0,
-                padding: const EdgeInsets.only(right: 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 25.0),
-                  child: TextField(
-                    minLines: 1,
-                    maxLines: 5,
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary),
-                    controller: _promptInputController,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.background,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                        borderRadius: BorderRadius.circular(10.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 290.0,
+                  padding: const EdgeInsets.only(right: 10.0),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 25.0),
+                    child: TextField(
+                      minLines: 1,
+                      maxLines: 5,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary),
+                      controller: _promptInputController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.background,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        hintText: "Input text or Ask with an image",
+                        hintStyle: TextStyle(
+                            color: Theme.of(context).colorScheme.primary),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      hintText: "Input text or Ask with an image",
-                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 ),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.background,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.background,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  onPressed: () {
+                    if (_imageBytes != null) {
+                      _generateTextWithImage();
+                    } else {
+                      _generateText();
+                    }
+                  },
+                  child: const Text('Ask'),
                 ),
-                onPressed: () {
-                  if (_imageBytes != null) {
-                    _generateTextWithImage();
-                  } else {
-                    _generateText();
-                  }
-                },
-                child: const Text('Ask'),
-              ),
-            ],
-          )
-        ],
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
-
 
   Future<void> _generateText() async {
     final text = _promptInputController.text;
@@ -152,7 +160,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget> wit
     }
 
     setState(() {
-      _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -163,11 +171,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget> wit
       });
     } catch (e) {
       setState(() {
-        mdText = 'Error generating text: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _errorMessage = 'Error generating text: $e';
       });
     }
   }
@@ -178,8 +182,15 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget> wit
       final bytes = await pickedFile.readAsBytes();
       setState(() {
         _imageBytes = bytes;
+        _errorMessage = null;
       });
     }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _imageBytes = null;
+    });
   }
 
   Future<void> _generateTextWithImage() async {
@@ -188,7 +199,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget> wit
     }
 
     setState(() {
-      _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -202,11 +213,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget> wit
       });
     } catch (e) {
       setState(() {
-        mdText = 'Error generating text with image: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _errorMessage = 'Error generating text with image: $e';
       });
     }
   }
