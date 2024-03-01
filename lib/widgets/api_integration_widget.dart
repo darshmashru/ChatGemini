@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
@@ -8,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ApiIntegrationWidget extends StatefulWidget {
-  const ApiIntegrationWidget({Key? key}) : super(key: key);
+  const ApiIntegrationWidget({super.key});
 
   @override
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
@@ -62,7 +61,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red),
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ),
                     MarkdownBody(
@@ -163,7 +162,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                   ),
                   onPressed: _isLoading || _isAsking ? null : _ask,
                   child: _isLoading || _isAsking
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 20.0,
                           height: 20.0,
                           child: CircularProgressIndicator(
@@ -262,7 +261,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
   Future<void> _copyText() async {
     await Clipboard.setData(ClipboardData(text: mdText));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Text copied to clipboard')),
+      const SnackBar(content: Text('Text copied to clipboard')),
     );
   }
 
