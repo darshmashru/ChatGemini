@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
@@ -7,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ApiIntegrationWidget extends StatefulWidget {
-  const ApiIntegrationWidget({super.key});
+  const ApiIntegrationWidget({Key? key}) : super(key: key);
 
   @override
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
@@ -22,12 +23,12 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
   Uint8List? _imageBytes;
   String? _errorMessage;
   bool _isLoading = false;
-  late bool _isAsking;
+  bool _isAsking = false;
+  late Timer _typingTimer;
 
   @override
   void initState() {
     super.initState();
-    _isAsking = false;
   }
 
   @override
@@ -103,7 +104,8 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: FloatingActionButton(
-                    onPressed: _isLoading ? null : _copyText,
+                    onPressed:
+                        _isLoading ? null : _copyText,
                     tooltip: 'Copy Text',
                     child: const Icon(Icons.copy),
                   ),
@@ -112,7 +114,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                   padding: const EdgeInsets.all(8.0),
                   child: FloatingActionButton(
                     onPressed:
-                        _isAsking ? _stopAsking : (_isLoading ? null : _ask),
+                        _isLoading ? _stopAsking : (_isAsking ? _stopAsking : null),
                     tooltip: 'Stop/Ask',
                     child: _isLoading || _isAsking
                         ? const Icon(Icons.stop)
@@ -162,7 +164,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                   ),
                   onPressed: _isLoading || _isAsking ? null : _ask,
                   child: _isLoading || _isAsking
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20.0,
                           height: 20.0,
                           child: CircularProgressIndicator(
@@ -198,10 +200,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
     try {
       final gemini = Gemini.instance;
       final result = await gemini.text(_promptInputController.text);
-      setState(() {
-        mdText = result?.output ?? 'No output';
-        _isLoading = false;
-      });
+      _startTyping(result?.output ?? 'No output');
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text: $e';
@@ -223,10 +222,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
         text: _promptInputController.text,
         images: [_imageBytes!],
       );
-      setState(() {
-        mdText = result?.content?.parts?.last.text ?? 'No output';
-        _isLoading = false;
-      });
+      _startTyping(result?.content?.parts?.last.text ?? 'No output');
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text with image: $e';
@@ -235,8 +231,27 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
     }
   }
 
+  void _startTyping(String text) {
+    const typingInterval = Duration(milliseconds: 15);
+    int i = 0;
+
+    _typingTimer = Timer.periodic(typingInterval, (timer) {
+      setState(() {
+        if (i < text.length) {
+          mdText = text.substring(0, i + 1);
+          i++;
+        } else {
+          timer.cancel();
+          _isLoading = false;
+        }
+      });
+    });
+  }
+
   void _stopAsking() {
+    _typingTimer.cancel(); // Cancel the timer when stopping asking
     setState(() {
+      _isLoading = false; // Update isLoading state to false
       _isAsking = false;
     });
   }
