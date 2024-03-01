@@ -1,35 +1,40 @@
-import 'dart:developer';
-import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-class ApiIntegrationWidget extends ConsumerStatefulWidget {
-  const ApiIntegrationWidget({Key? key}) : super(key: key);
+class ApiIntegrationWidget extends StatefulWidget {
+  const ApiIntegrationWidget({super.key});
 
   @override
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
 }
 
-class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
+class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
   final ScrollController _outputScrollController = ScrollController();
   String mdText = "";
   final ImagePicker _picker = ImagePicker();
-  Uint8List? _imageBytes; // Use Uint8List for image bytes
+  Uint8List? _imageBytes;
   String? _errorMessage;
-  bool _isLoading = false; // Add this variable to track loading state
+  bool _isLoading = false;
+  late bool _isAsking;
+
+  @override
+  void initState() {
+    super.initState();
+    _isAsking = false;
+  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Padding(
-      padding: const EdgeInsets.all(8.0), // Adjust padding as needed
+      padding: const EdgeInsets.all(8.0),
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.background,
         body: Column(
@@ -45,9 +50,8 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                         padding: const EdgeInsets.all(8.0),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width -
-                                16, // Adjust the width as needed
-                            maxHeight: 300, // Adjust the height as needed
+                            maxWidth: MediaQuery.of(context).size.width - 16,
+                            maxHeight: 300,
                           ),
                           child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                         ),
@@ -57,11 +61,11 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red),
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ),
                     MarkdownBody(
-                      data: mdText,
+                      data: _isLoading ? mdText : mdText,
                       selectable: true,
                       onTapLink: (text, href, title) {
                         if (href != null) {
@@ -102,6 +106,17 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                     onPressed: _isLoading ? null : _copyText,
                     tooltip: 'Copy Text',
                     child: const Icon(Icons.copy),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: FloatingActionButton(
+                    onPressed:
+                        _isAsking ? _stopAsking : (_isLoading ? null : _ask),
+                    tooltip: 'Stop/Ask',
+                    child: _isLoading || _isAsking
+                        ? const Icon(Icons.stop)
+                        : const Icon(Icons.play_arrow),
                   ),
                 ),
               ],
@@ -145,19 +160,13 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                     foregroundColor: Theme.of(context).colorScheme.background,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
-                  onPressed: _isLoading ? null : () {
-                    if (_imageBytes != null) {
-                      _generateTextWithImage();
-                    } else {
-                      _generateText();
-                    }
-                  },
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 20.0, // Adjust the width as needed
-                          height: 20.0, // Adjust the height as needed
+                  onPressed: _isLoading || _isAsking ? null : _ask,
+                  child: _isLoading || _isAsking
+                      ? const SizedBox(
+                          width: 20.0,
+                          height: 20.0,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2.0, // Decrease the stroke width
+                            strokeWidth: 2.0,
                           ),
                         )
                       : const Text('Ask'),
@@ -170,30 +179,66 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     );
   }
 
-  Future<void> _generateText() async {
+  Future<void> _ask() async {
     final text = _promptInputController.text;
-    if (text.isEmpty) {
-      return;
+    if (_imageBytes != null) {
+      await _generateTextWithImage();
+    } else {
+      await _generateText();
     }
+  }
 
+  Future<void> _generateText() async {
     setState(() {
       _errorMessage = null;
-      _isLoading = true; // Set loading state to true
+      _isLoading = true;
+      mdText = '';
     });
 
     try {
       final gemini = Gemini.instance;
-      final result = await gemini.text(text);
+      final result = await gemini.text(_promptInputController.text);
       setState(() {
         mdText = result?.output ?? 'No output';
-        _isLoading = false; // Set loading state to false after completion
+        _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text: $e';
-        _isLoading = false; // Set loading state to false on error
+        _isLoading = false;
       });
     }
+  }
+
+  Future<void> _generateTextWithImage() async {
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+      mdText = '';
+    });
+
+    try {
+      final gemini = Gemini.instance;
+      final result = await gemini.textAndImage(
+        text: _promptInputController.text,
+        images: [_imageBytes!],
+      );
+      setState(() {
+        mdText = result?.content?.parts?.last.text ?? 'No output';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error generating text with image: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _stopAsking() {
+    setState(() {
+      _isAsking = false;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -213,38 +258,10 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
     });
   }
 
-  Future<void> _generateTextWithImage() async {
-    if (_imageBytes == null) {
-      return;
-    }
-
-    setState(() {
-      _errorMessage = null;
-      _isLoading = true; // Set loading state to true
-    });
-
-    try {
-      final gemini = Gemini.instance;
-      final result = await gemini.textAndImage(
-        text: _promptInputController.text,
-        images: [_imageBytes!],
-      );
-      setState(() {
-        mdText = result?.content?.parts?.last.text ?? 'No output';
-        _isLoading = false; // Set loading state to false after completion
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error generating text with image: $e';
-        _isLoading = false; // Set loading state to false on error
-      });
-    }
-  }
-
   Future<void> _copyText() async {
     await Clipboard.setData(ClipboardData(text: mdText));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Text copied to clipboard')),
+      const SnackBar(content: Text('Text copied to clipboard')),
     );
   }
 

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:ChatGemini/globals.dart';
-import 'package:ChatGemini/screens/Safety/safety.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ChatGemini/screens/Profile/profile.dart';
@@ -100,7 +99,7 @@ class _HomePageState extends State<HomePage> {
             const Profile(),
             // const SettingsPage(),
             //TODO: Update settings to also show only if platform is android.
-            const Safety()
+            // const Safety()
           ],
           onPageChanged: (index) {
             setState(() {
@@ -139,11 +138,11 @@ class _HomePageState extends State<HomePage> {
             //     label: "Settings",
             //     backgroundColor: Colors.black,
             //   ),
-              BottomNavigationBarItem(
-              icon: Icon(Icons.health_and_safety),
-              label: "Safety",
-              backgroundColor: Colors.black,
-            ),
+            //   BottomNavigationBarItem(
+            //   icon: Icon(Icons.health_and_safety),
+            //   label: "Safety",
+            //   backgroundColor: Colors.black,
+            // ),
           ],
         ),
       ),
