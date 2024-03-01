@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ApiIntegrationWidget extends StatefulWidget {
-  const ApiIntegrationWidget({Key? key}) : super(key: key);
+  const ApiIntegrationWidget({super.key});
 
   @override
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
@@ -266,7 +267,6 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
       });
     }
   }
-
   void _removeImage() {
     setState(() {
       _imageBytes = null;
