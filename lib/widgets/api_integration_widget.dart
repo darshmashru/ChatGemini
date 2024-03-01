@@ -23,10 +23,12 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
   Uint8List? _imageBytes;
   String? _errorMessage;
   bool _isLoading = false;
+  late bool _isAsking;
 
   @override
   void initState() {
     super.initState();
+    _isAsking = false;
   }
 
   @override
@@ -107,6 +109,17 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                     child: const Icon(Icons.copy),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: FloatingActionButton(
+                    onPressed:
+                        _isAsking ? _stopAsking : (_isLoading ? null : _ask),
+                    tooltip: 'Stop/Ask',
+                    child: _isLoading || _isAsking
+                        ? const Icon(Icons.stop)
+                        : const Icon(Icons.play_arrow),
+                  ),
+                ),
               ],
             ),
             Row(
@@ -148,14 +161,8 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
                     foregroundColor: Theme.of(context).colorScheme.background,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
-                  onPressed: _isLoading ? null : () {
-                    if (_imageBytes != null) {
-                      _generateTextWithImage();
-                    } else {
-                      _generateText();
-                    }
-                  },
-                  child: _isLoading
+                  onPressed: _isLoading || _isAsking ? null : _ask,
+                  child: _isLoading || _isAsking
                       ? SizedBox(
                           width: 20.0,
                           height: 20.0,
@@ -173,41 +180,50 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
     );
   }
 
-  Future<void> _generateText() async {
-    final text = _promptInputController.text;
-    if (text.isEmpty) {
-      return;
-    }
-
+  Future<void> _ask() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
+      _isAsking = true;
       mdText = '';
     });
 
     try {
       final gemini = Gemini.instance;
+      final text = _promptInputController.text;
+      if (text.isEmpty) {
+        throw Exception('Please enter text');
+      }
       final result = await gemini.text(text);
       final generatedText = result?.output ?? 'No output';
 
       for (int i = 0; i < generatedText.length; i++) {
+        if (!_isAsking) break;
         await Future.delayed(const Duration(milliseconds: 10));
         setState(() {
           mdText += generatedText[i];
         });
-        // Scroll to the bottom
-        _outputScrollController.jumpTo(_outputScrollController.position.maxScrollExtent);
+        _outputScrollController
+            .jumpTo(_outputScrollController.position.maxScrollExtent);
       }
 
       setState(() {
         _isLoading = false;
+        _isAsking = false;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text: $e';
         _isLoading = false;
+        _isAsking = false;
       });
     }
+  }
+
+  void _stopAsking() {
+    setState(() {
+      _isAsking = false;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -225,45 +241,6 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
     setState(() {
       _imageBytes = null;
     });
-  }
-
-  Future<void> _generateTextWithImage() async {
-    if (_imageBytes == null) {
-      return;
-    }
-
-    setState(() {
-      _errorMessage = null;
-      _isLoading = true;
-      mdText = '';
-    });
-
-    try {
-      final gemini = Gemini.instance;
-      final result = await gemini.textAndImage(
-        text: _promptInputController.text,
-        images: [_imageBytes!],
-      );
-      final generatedText = result?.content?.parts?.last.text ?? 'No output';
-
-      for (int i = 0; i < generatedText.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 10));
-        setState(() {
-          mdText += generatedText[i];
-        });
-        // Scroll to the bottom
-        _outputScrollController.jumpTo(_outputScrollController.position.maxScrollExtent);
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error generating text with image: $e';
-        _isLoading = false;
-      });
-    }
   }
 
   Future<void> _copyText() async {
