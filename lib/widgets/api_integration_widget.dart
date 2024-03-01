@@ -23,6 +23,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
   final ImagePicker _picker = ImagePicker();
   Uint8List? _imageBytes; // Use Uint8List for image bytes
   String? _errorMessage;
+  bool _isLoading = false; // Add this variable to track loading state
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +96,14 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                       child: const Icon(Icons.remove),
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: FloatingActionButton(
+                    onPressed: _isLoading ? null : _copyText,
+                    tooltip: 'Copy Text',
+                    child: const Icon(Icons.copy),
+                  ),
+                ),
               ],
             ),
             Row(
@@ -136,14 +145,16 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                     foregroundColor: Theme.of(context).colorScheme.background,
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
-                  onPressed: () {
+                  onPressed: _isLoading ? null : () {
                     if (_imageBytes != null) {
                       _generateTextWithImage();
                     } else {
                       _generateText();
                     }
                   },
-                  child: const Text('Ask'),
+                  child: _isLoading
+                      ? CircularProgressIndicator() // Show loading indicator
+                      : const Text('Ask'),
                 ),
               ],
             )
@@ -161,6 +172,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
 
     setState(() {
       _errorMessage = null;
+      _isLoading = true; // Set loading state to true
     });
 
     try {
@@ -168,10 +180,12 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
       final result = await gemini.text(text);
       setState(() {
         mdText = result?.output ?? 'No output';
+        _isLoading = false; // Set loading state to false after completion
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text: $e';
+        _isLoading = false; // Set loading state to false on error
       });
     }
   }
@@ -200,6 +214,7 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
 
     setState(() {
       _errorMessage = null;
+      _isLoading = true; // Set loading state to true
     });
 
     try {
@@ -210,12 +225,21 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
       );
       setState(() {
         mdText = result?.content?.parts?.last.text ?? 'No output';
+        _isLoading = false; // Set loading state to false after completion
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text with image: $e';
+        _isLoading = false; // Set loading state to false on error
       });
     }
+  }
+
+  Future<void> _copyText() async {
+    await Clipboard.setData(ClipboardData(text: mdText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Text copied to clipboard')),
+    );
   }
 
   @override
