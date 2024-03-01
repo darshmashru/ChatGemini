@@ -153,7 +153,13 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
                     }
                   },
                   child: _isLoading
-                      ? CircularProgressIndicator() // Show loading indicator
+                      ? SizedBox(
+                          width: 20.0, // Adjust the width as needed
+                          height: 20.0, // Adjust the height as needed
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0, // Decrease the stroke width
+                          ),
+                        )
                       : const Text('Ask'),
                 ),
               ],

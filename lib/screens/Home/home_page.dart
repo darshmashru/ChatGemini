@@ -165,15 +165,7 @@ class _HomePageState extends State<HomePage> {
             textAlign: TextAlign.left,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            "Explore and work with the Gemini API!", // Add your subheading text here
-            style: TextStyle(
-                fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
-            textAlign: TextAlign.left,
-          ),
-        ),
+        
         Divider(
           color: Theme.of(context).colorScheme.primary,
         ),
