@@ -1,22 +1,20 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-class ApiIntegrationWidget extends ConsumerStatefulWidget {
+class ApiIntegrationWidget extends StatefulWidget {
   const ApiIntegrationWidget({Key? key}) : super(key: key);
 
   @override
   _ApiIntegrationWidgetState createState() => _ApiIntegrationWidgetState();
 }
 
-class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
+class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _promptInputController = TextEditingController();
   final ScrollController _outputScrollController = ScrollController();
@@ -193,10 +191,12 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
       final generatedText = result?.output ?? 'No output';
 
       for (int i = 0; i < generatedText.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 5));
+        await Future.delayed(const Duration(milliseconds: 10));
         setState(() {
           mdText += generatedText[i];
         });
+        // Scroll to the bottom
+        _outputScrollController.jumpTo(_outputScrollController.position.maxScrollExtent);
       }
 
       setState(() {
@@ -247,10 +247,12 @@ class _ApiIntegrationWidgetState extends ConsumerState<ApiIntegrationWidget>
       final generatedText = result?.content?.parts?.last.text ?? 'No output';
 
       for (int i = 0; i < generatedText.length; i++) {
-        await Future.delayed(const Duration(milliseconds: 5));
+        await Future.delayed(const Duration(milliseconds: 10));
         setState(() {
           mdText += generatedText[i];
         });
+        // Scroll to the bottom
+        _outputScrollController.jumpTo(_outputScrollController.position.maxScrollExtent);
       }
 
       setState(() {
