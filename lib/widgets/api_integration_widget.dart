@@ -35,7 +35,7 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
   Widget build(BuildContext context) {
     super.build(context);
     return Padding(
-      padding: const EdgeInsets.all(8.0), // Adjust padding as needed
+      padding: const EdgeInsets.all(8.0),
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.background,
         body: Column(
@@ -181,41 +181,57 @@ class _ApiIntegrationWidgetState extends State<ApiIntegrationWidget>
   }
 
   Future<void> _ask() async {
+    final text = _promptInputController.text;
+    if (_imageBytes != null) {
+      await _generateTextWithImage();
+    } else {
+      await _generateText();
+    }
+  }
+
+  Future<void> _generateText() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
-      _isAsking = true;
       mdText = '';
     });
 
     try {
       final gemini = Gemini.instance;
-      final text = _promptInputController.text;
-      if (text.isEmpty) {
-        throw Exception('Please enter text');
-      }
-      final result = await gemini.text(text);
-      final generatedText = result?.output ?? 'No output';
-
-      for (int i = 0; i < generatedText.length; i++) {
-        if (!_isAsking) break;
-        await Future.delayed(const Duration(milliseconds: 10));
-        setState(() {
-          mdText += generatedText[i];
-        });
-        _outputScrollController
-            .jumpTo(_outputScrollController.position.maxScrollExtent);
-      }
-
+      final result = await gemini.text(_promptInputController.text);
       setState(() {
+        mdText = result?.output ?? 'No output';
         _isLoading = false;
-        _isAsking = false;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error generating text: $e';
         _isLoading = false;
-        _isAsking = false;
+      });
+    }
+  }
+
+  Future<void> _generateTextWithImage() async {
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+      mdText = '';
+    });
+
+    try {
+      final gemini = Gemini.instance;
+      final result = await gemini.textAndImage(
+        text: _promptInputController.text,
+        images: [_imageBytes!],
+      );
+      setState(() {
+        mdText = result?.content?.parts?.last.text ?? 'No output';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error generating text with image: $e';
+        _isLoading = false;
       });
     }
   }
