@@ -3,11 +3,11 @@
 ## Introduction :-
 
 A Flutter project that enables you to access the Gemini API from a Flutter application. This application already has an API Key embedded within it but a custom one can also be added if required.
-In order to use ChatGemini with your own API Key, you need to get an API Key from makersuite.google.com.
+In order to use ChatGemini with your own API Key, you need to get an API Key from [aistudio.google.com](https://aistudio.google.com/).
 Once you have the key, you can paste it in the profile section of the application and start writing prompts from within the application.
 
 
-# DEMO
+# Demo
 
 
 https://github.com/darshmashru/ChatGemini/assets/70889682/36d69a03-cb1f-4e3b-93c9-4ad5edaf0e4a
