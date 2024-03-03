@@ -22,7 +22,7 @@ https://github.com/darshmashru/ChatGemini/assets/70889682/36d69a03-cb1f-4e3b-93c
 To run this project we have to first create a .env file in the root directory
 
 ```bash
-  git clone https://github.com/darshmashru/ChatPaLM.git
+  git clone https://github.com/darshmashru/ChatGemini.git
 ```
 
 ```bash
@@ -41,7 +41,7 @@ Add Your Enviornment Variables
 
 Your final file would look like 
 ```bash
-PALM_API_KEY = YOUR_API_KEY
+GEMINI_API_KEY = YOUR_API_KEY
 FIREBASE_WEB = YOUR_API_KEY
 FIREBASE_ANDROID = YOUR_API_KEY
 FIREBASE_IOS = YOUR_API_KEY
