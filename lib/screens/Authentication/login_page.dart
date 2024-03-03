@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                   height: 25,
                 ),
                 Text(
-                  "Welcome to ChatGemini!🎉🎉",
+                  "Welcome to ChatGemini!",
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontSize: 16,
