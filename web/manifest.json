@@ -1,6 +1,6 @@
 {
-    "name": "chatpalm_app",
-    "short_name": "chatpalm_app",
+    "name": "ChatGemini",
+    "short_name": "ChatGemini",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
