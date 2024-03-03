@@ -33,7 +33,7 @@ Add Your Enviornment Variables
 
 | Parameter | Type     | Description                |
 | :-------- | :------- | :------------------------- |
-| `PALM_API_KEY` | `string` | **Required**. Your API key |
+| `GEMINI_API_KEY` | `string` | **Required**. Your API key |
 | `FIREBASE_WEB` | `string` | **Required**. Your Firebase Web API key |
 | `FIREBASE_IOS` | `string` | **Required**. Your Firebase IOS API key |
 | `FIREBASE_ANDROID` | `string` | **Required**. Your Firebase Android API key |
